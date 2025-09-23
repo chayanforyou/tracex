@@ -1,0 +1,29 @@
+name: tracex
+description: "Advanced In-App Debugging Console for Flutter Applications with Network Monitoring"
+version: 1.0.0
+homepage: https://github.com/chayanforyou/tracex
+repository: https://github.com/chayanforyou/tracex
+issue_tracker: https://github.com/chayanforyou/tracex/issues
+
+topics:
+  - logger
+  - tracer
+  - debugger
+  - logging
+  - tool
+
+environment:
+  sdk: '>=3.6.0 <4.0.0'
+  flutter: ">=1.17.0"
+
+dependencies:
+  dio: ">=4.0.0 <6.0.0"
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
