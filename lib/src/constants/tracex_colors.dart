@@ -9,6 +9,6 @@ class TraceXColors {
   static const Color orange = Color(0xFFFF9800);
   static const Color black = Color(0xFF181818);
   static const Color grey = Color(0xFFECEFF1);
-  static const Color textPrimary = Color(0xFF424242);
-  static const Color textSecondary = Color(0xFFA1A1A1);
+  static const Color textPrimary = Color(0xFF191C20);
+  static const Color textSecondary = Color(0xff43474E);
 }

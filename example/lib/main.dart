@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:tracex/tracex.dart';
 
@@ -7,6 +8,7 @@ final TraceX tracex = TraceX(
   edgeMargin: 6.0,
   customFab: (isOpen) => MyCustomFab(isOpen: isOpen),
   logger: TraceXPrettyLogger(
+    enabled: kDebugMode,
     compact: true,
     responseHeader: false,
   ),

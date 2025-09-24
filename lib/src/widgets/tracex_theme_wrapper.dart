@@ -18,6 +18,18 @@ class TraceXThemeWrapper extends StatelessWidget {
         dividerTheme: DividerThemeData(
           color: TraceXColors.grey,
         ),
+        listTileTheme: ListTileThemeData(
+          titleTextStyle: TextStyle(
+            height: 1.5,
+            fontWeight: FontWeight.bold,
+            color: TraceXColors.textPrimary,
+          ),
+          subtitleTextStyle: TextStyle(
+            height: 1.43,
+            fontWeight: FontWeight.normal,
+            color: TraceXColors.textSecondary,
+          ),
+        ),
       ),
       child: child,
     );

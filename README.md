@@ -19,9 +19,9 @@ Advanced In-App Debugging Console for Flutter Applications with Network Monitori
 
 ##  Screenshots
 
-| Console                                                                  | Network Logs                                                             | Custom FAB                                                           |
-|--------------------------------------------------------------------------|--------------------------------------------------------------------------|----------------------------------------------------------------------|
-| ![Console](https://github.com/chayanforyou/tracex/blob/master/doc/1.png) | ![Network](https://github.com/chayanforyou/tracex/blob/master/doc/2.png) | ![FAB](https://github.com/chayanforyou/tracex/blob/master/doc/3.png) |
+| Console               | Network Logs          | Custom FAB        |
+|-----------------------|-----------------------|-------------------|
+| ![Console](doc/1.png) | ![Network](doc/2.png) | ![FAB](doc/3.png) |
 
 ##  Getting Started
 
@@ -29,7 +29,7 @@ Advanced In-App Debugging Console for Flutter Applications with Network Monitori
 
 ```yaml
 dependencies:
-  tracex: ^1.0.0
+  tracex: ^1.1.1
 ```
 
 Then run `flutter pub get`.
@@ -42,14 +42,15 @@ Create a global `TraceX` instance:
 
 ```dart
 final TraceX tracex = TraceX(
-  // Custom floating action button
-  customFab: (isOpen) => MyCustomFab(isOpen: isOpen),
-  
   // Pretty logger for beautiful console output
   logger: TraceXPrettyLogger(
+    enabled: kDebugMode,
     compact: true,
     maxWidth: 100,
   ),
+  
+  // Custom floating action button
+  customFab: (isOpen) => MyCustomFab(isOpen: isOpen),
   
   // Button size and edge margin
   buttonSize: 48.0,

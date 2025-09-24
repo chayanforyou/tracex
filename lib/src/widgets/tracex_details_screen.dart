@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tracex/src/extensions/entry_extensions.dart';
 import 'package:tracex/src/extensions/object_extensions.dart';
 import 'package:tracex/src/extensions/string_extensions.dart';
+import 'package:tracex/src/highlight/json_highlight.dart';
 import 'package:tracex/src/widgets/tracex_theme_wrapper.dart';
 import 'package:tracex/tracex.dart';
 
@@ -118,12 +119,14 @@ class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> {
                           SelectableCopiableTile(
                             title: 'HEADERS',
                             subtitle: widget.entry.request.headers.prettyJson,
+                            highlight: true,
                           ),
                           if (widget.entry.request.method != 'GET') ...[
                             const Divider(height: 0.0),
                             SelectableCopiableTile(
                               title: 'BODY',
                               subtitle: widget.entry.request.body.prettyJson,
+                              highlight: true,
                             ),
                           ],
                         ],
@@ -142,11 +145,13 @@ class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> {
                           SelectableCopiableTile(
                             title: 'HEADERS',
                             subtitle: widget.entry.response.headers.prettyJson,
+                            highlight: true,
                           ),
                           const Divider(height: 0.0),
                           SelectableCopiableTile(
                             title: 'BODY',
                             subtitle: widget.entry.response.body.prettyJson,
+                            highlight: true,
                           ),
                         ],
                       ),
@@ -165,10 +170,12 @@ class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> {
 class SelectableCopiableTile extends StatelessWidget {
   final String title;
   final String subtitle;
+  final bool highlight;
 
   const SelectableCopiableTile({
     required this.title,
     required this.subtitle,
+    this.highlight = false,
     super.key,
   });
 
@@ -176,21 +183,11 @@ class SelectableCopiableTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       onTap: () => _copyToClipboard(context),
-      title: SelectableText(
-        title,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-        ),
-        onTap: () => _copyToClipboard(context),
-      ),
+      title: Text(title),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 4.0),
-        child: SelectableText(
-          subtitle,
-          onTap: () => _copyToClipboard(context),
-        ),
+        child: highlight ? JsonHighlight(subtitle) : Text(subtitle),
       ),
-      // trailing: const Icon(Icons.copy),
     );
   }
 

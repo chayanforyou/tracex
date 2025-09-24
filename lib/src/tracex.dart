@@ -1,23 +1,21 @@
-import 'dart:developer' as developer;
-
 import 'package:flutter/material.dart';
 import 'package:tracex/src/core/tracex_overlay.dart';
 import 'package:tracex/src/widgets/tracex_home_screen.dart';
 import 'package:tracex/tracex.dart';
 
 class TraceX {
-  final int logBufferLength;
+  final TraceXPrettyLogger logger;
   final Widget Function(bool isOpen)? customFab;
   final double buttonSize;
   final double edgeMargin;
-  final TraceXPrettyLogger? logger;
+  final int logBufferLength;
 
   TraceX({
+    required this.logger,
+    this.customFab,
     this.buttonSize = 48.0,
     this.edgeMargin = 6.0,
     this.logBufferLength = 2500,
-    this.customFab,
-    this.logger,
   });
 
   final logs = ValueNotifier(<TraceXEntry>[]);
@@ -30,15 +28,7 @@ class TraceX {
   }
 
   void log(Object? message, {StackTrace? stackTrace}) {
-    if (logger != null) {
-      logger!.logMessage(message.toString(), stackTrace: stackTrace);
-    } else {
-      developer.log(
-        message.toString(),
-        name: 'tracex',
-        stackTrace: stackTrace,
-      );
-    }
+    logger.logMessage(message.toString(), stackTrace: stackTrace);
   }
 
   void network({
@@ -51,10 +41,7 @@ class TraceX {
         response: response,
       );
 
-      if (logger != null) {
-        logger!.logNetwork(entry);
-      }
-
+      logger.logNetwork(entry);
       _add(entry);
     } catch (_) {}
   }

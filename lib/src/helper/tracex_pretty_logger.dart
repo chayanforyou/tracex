@@ -44,6 +44,9 @@ class TraceXPrettyLogger {
   /// you can also write log in a file.
   final void Function(Object object) logPrint;
 
+  /// Enable log print
+  final bool enabled;
+
   /// Default constructor
   TraceXPrettyLogger({
     this.request = true,
@@ -52,13 +55,16 @@ class TraceXPrettyLogger {
     this.responseHeader = true,
     this.responseBody = true,
     this.error = true,
-    this.maxWidth = 100,
+    this.maxWidth = 90,
     this.compact = true,
     this.logPrint = print,
+    this.enabled = true,
   });
 
   /// Log a network entry with pretty format
   void logNetwork(TraceXNetworkEntry entry) {
+    if (!enabled) return;
+
     final request = entry.request;
     final response = entry.response;
     final timestamp = DateTime.now().toIso8601String();
@@ -99,6 +105,8 @@ class TraceXPrettyLogger {
 
   /// Log a general message with pretty format
   void logMessage(String message, {StackTrace? stackTrace}) {
+    if (!enabled) return;
+
     final timestamp = DateTime.now().toIso8601String();
 
     _printBoxed(
