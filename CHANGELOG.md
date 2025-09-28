@@ -10,3 +10,8 @@ Implement json highlight
 
 Implement json highlight
 Update readme
+
+## 1.1.2
+
+Implement json highlight
+Enable/disable functionality

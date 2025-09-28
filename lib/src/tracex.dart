@@ -46,11 +46,16 @@ class TraceX {
     } catch (_) {}
   }
 
-  void attach(BuildContext context) {
-    TraceXOverlay.attach(
-      context: context,
-      instance: this,
-    );
+  void attach({
+    required BuildContext context,
+    required bool visible,
+  }) {
+    if (visible) {
+      TraceXOverlay.attach(
+        context: context,
+        instance: this,
+      );
+    }
   }
 
   /// Check if Overlay is currently attached

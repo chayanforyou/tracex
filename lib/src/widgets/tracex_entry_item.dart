@@ -137,7 +137,13 @@ class _StatusIcon extends StatelessWidget {
       );
     }
 
-    if (statusCode >= 200 && statusCode < 300) {
+    if (statusCode >= 100 && statusCode < 200) {
+      return const Icon(
+        Icons.public_rounded,
+        color: TraceXColors.blue,
+        size: 20.0,
+      );
+    } else if (statusCode >= 200 && statusCode < 300) {
       return const Icon(
         Icons.public_rounded,
         color: TraceXColors.green,
@@ -149,16 +155,10 @@ class _StatusIcon extends StatelessWidget {
         color: TraceXColors.orange,
         size: 20.0,
       );
-    } else if (statusCode >= 500) {
-      return const Icon(
-        Icons.error_outline_rounded,
-        color: TraceXColors.red,
-        size: 20.0,
-      );
-    } else {
+    }  else {
       return const Icon(
         Icons.info_outline_rounded,
-        color: TraceXColors.blue,
+        color: TraceXColors.red,
         size: 20.0,
       );
     }
@@ -166,13 +166,13 @@ class _StatusIcon extends StatelessWidget {
 }
 
 Color _getStatusColor(int statusCode) {
-  if (statusCode >= 200 && statusCode < 300) {
+  if (statusCode >= 100 && statusCode < 200) {
+    return TraceXColors.blue;
+  } else if (statusCode >= 200 && statusCode < 300) {
     return TraceXColors.green;
   } else if (statusCode >= 400 && statusCode < 500) {
     return TraceXColors.orange;
-  } else if (statusCode >= 500) {
-    return TraceXColors.red;
   } else {
-    return TraceXColors.blue;
+    return TraceXColors.red;
   }
 }

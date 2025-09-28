@@ -29,7 +29,7 @@ Advanced In-App Debugging Console for Flutter Applications with Network Monitori
 
 ```yaml
 dependencies:
-  tracex: ^1.1.1
+  tracex: ^1.1.2
 ```
 
 Then run `flutter pub get`.
@@ -72,7 +72,10 @@ Attach the floating button to the widget tree:
 void initState() {
   super.initState();
   
-  tracex.attach(context);
+  tracex.attach(
+    context: context,
+    visible: kDebugMode,
+  );
 }
 ```
 

@@ -54,7 +54,10 @@ class HomePageState extends State<HomePage> {
         TraceXDioInterceptor(tracex),
       );
 
-    tracex.attach(context);
+    tracex.attach(
+      context: context,
+      visible: kDebugMode,
+    );
   }
 
   @override
