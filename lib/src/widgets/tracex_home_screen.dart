@@ -121,7 +121,8 @@ class _List extends StatelessWidget {
         child: TextField(
           controller: controller,
           decoration: InputDecoration(
-            hintText: 'Search',
+            hintText: 'Search...',
+            isDense: true,
             border: OutlineInputBorder(),
             prefixIcon: const Icon(Icons.search),
             suffixIcon: IconButton(
