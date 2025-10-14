@@ -144,8 +144,8 @@ class _DraggableFabState extends State<_DraggableFab> with SingleTickerProviderS
     final size = MediaQuery.of(context).size;
     final isLeftSide = _offset.dx < size.width / 2;
     final targetX = isLeftSide 
-        ? -_buttonWidth + 15 // Show small part on left edge
-        : size.width - 15; // Show small part on right edge
+        ? -_buttonWidth + _buttonWidth / 2 // Show small part on left edge
+        : size.width - _buttonWidth / 2; // Show small part on right edge
     
     _animation = Tween<Offset>(
       begin: _offset,

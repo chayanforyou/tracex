@@ -7,13 +7,15 @@ import 'package:tracex/src/widgets/tracex_search_bar.dart';
 import 'package:tracex/src/widgets/tracex_theme_wrapper.dart';
 import 'package:tracex/tracex.dart';
 
-enum MenuItem { copy, copyCurl, share }
+enum MenuItem { copy, copyCurl, share, shareCurl }
 
 class TraceXDetailsScreen extends StatefulWidget {
   final TraceXNetworkEntry entry;
+  final TraceX instance;
 
   const TraceXDetailsScreen(
     this.entry, {
+    required this.instance,
     super.key,
   });
 
@@ -21,10 +23,12 @@ class TraceXDetailsScreen extends StatefulWidget {
   State<TraceXDetailsScreen> createState() => _TraceXDetailsScreenState();
 }
 
-class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> {
-  final ScrollController _scrollController1 = ScrollController();
-  final ScrollController _scrollController2 = ScrollController();
-  final GlobalKey _currentMatchKey = GlobalKey();
+class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> with SingleTickerProviderStateMixin{
+  final GlobalKey _requestBodyMatchKey = GlobalKey();
+  final GlobalKey _responseBodyMatchKey = GlobalKey();
+  final ScrollController _requestController = ScrollController();
+  final ScrollController _responseController = ScrollController();
+  late final TabController _tabController;
 
   bool _showSearch = false;
   String _searchQuery = '';
@@ -32,9 +36,25 @@ class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> {
   int _totalMatches = 0;
 
   @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      // Reset search count when switching tabs
+      if (_searchQuery.isNotEmpty) {
+        setState(() {
+          _totalMatches = _countMatches(_searchQuery);
+          _currentMatchIndex = 0;
+        });
+      }
+    });
+  }
+
+  @override
   void dispose() {
-    _scrollController1.dispose();
-    _scrollController2.dispose();
+    _tabController.dispose();
+    _requestController.dispose();
+    _responseController.dispose();
     super.dispose();
   }
 
@@ -60,14 +80,13 @@ class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> {
   int _countMatches(String query) {
     if (query.isEmpty) return 0;
 
-    final lowerText = [
-      widget.entry.request.body.prettyJson,
-      widget.entry.response.body.prettyJson,
-    ].join(' ').toLowerCase();
+    final textToSearch = _tabController.index == 0
+        ? widget.entry.request.body.prettyJson
+        : widget.entry.response.body.prettyJson;
 
-    int count = 0;
+    final lowerText = textToSearch.toLowerCase();
     final lowerQuery = query.toLowerCase();
-    int index = 0;
+    int count = 0, index = 0;
     while ((index = lowerText.indexOf(lowerQuery, index)) != -1) {
       count++;
       index += query.length;
@@ -94,13 +113,16 @@ class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> {
 
   void _scrollToCurrentMatch() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final context = _currentMatchKey.currentContext;
+      final context = _tabController.index == 0
+          ? _requestBodyMatchKey.currentContext
+          : _responseBodyMatchKey.currentContext;
+
       if (context != null) {
         Scrollable.ensureVisible(
           context,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-          alignment: 0.3,
+          alignment: 0.2,
         );
       }
     });
@@ -117,7 +139,12 @@ class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> {
         cmd.copyToClipboard(context);
         break;
       case MenuItem.share:
-        // final text = widget.entry.toString();
+        final text = widget.entry.toString();
+        widget.instance.onShare?.call(text);
+        break;
+      case MenuItem.shareCurl:
+        final cmd = widget.entry.toCurlCommand();
+        widget.instance.onShare?.call(cmd);
         break;
     }
   }
@@ -127,10 +154,6 @@ class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> {
     return TraceXThemeWrapper(
       child: Scaffold(
         appBar: AppBar(
-          leading: IconButton(
-            onPressed: Navigator.of(context).pop,
-            icon: const Icon(Icons.arrow_back),
-          ),
           title: Text(
             '${widget.entry.asReadableDuration}, ${widget.entry.response.body.toString().asReadableSize}',
             maxLines: 1,
@@ -143,24 +166,43 @@ class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> {
               tooltip: 'Search (Ctrl+F)',
               onPressed: _toggleSearch,
             ),
-            PopupMenuButton<MenuItem>(
-              tooltip: 'More',
-              icon: const Icon(Icons.more_vert),
-              onSelected: (item) {
-                handleClick(context, item);
+            MenuAnchor(
+              builder: (context, controller, child) {
+                return IconButton(
+                  tooltip: 'More',
+                  icon: const Icon(Icons.more_vert),
+                  onPressed: () {
+                    if (controller.isOpen) {
+                      controller.close();
+                    } else {
+                      controller.open();
+                    }
+                  },
+                );
               },
-              itemBuilder: (_) {
-                return <PopupMenuEntry<MenuItem>>[
-                  const PopupMenuItem<MenuItem>(
-                    value: MenuItem.copy,
-                    child: Text('Copy'),
-                  ),
-                  const PopupMenuItem<MenuItem>(
-                    value: MenuItem.copyCurl,
-                    child: Text('Copy cURL'),
-                  ),
-                ];
-              },
+              menuChildren: [
+                MenuItemButton(
+                  onPressed: () => handleClick(context, MenuItem.copy),
+                  child: const Text('Copy'),
+                ),
+                MenuItemButton(
+                  onPressed: () => handleClick(context, MenuItem.copyCurl),
+                  child: const Text('Copy cURL'),
+                ),
+                SubmenuButton(
+                  menuChildren: [
+                    MenuItemButton(
+                      onPressed: () => handleClick(context, MenuItem.share),
+                      child: const Text('Share'),
+                    ),
+                    MenuItemButton(
+                      onPressed: () => handleClick(context, MenuItem.shareCurl),
+                      child: const Text('Share cURL'),
+                    ),
+                  ],
+                  child: const Text('Share'),
+                ),
+              ],
             ),
             const SizedBox(width: 12.0),
           ],
@@ -177,82 +219,84 @@ class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> {
                 totalMatches: _totalMatches,
               ),
             Expanded(
-              child: DefaultTabController(
-                length: 2,
-                child: Column(
-                  children: [
-                    const TabBar(
-                      tabs: [
-                        Tab(text: 'Request'),
-                        Tab(text: 'Response'),
-                      ],
-                    ),
-                    Expanded(
-                      child: TabBarView(
-                        children: [
-                          Scrollbar(
-                            controller: _scrollController1,
-                            child: ListView(
-                              controller: _scrollController1,
-                              children: [
-                                SelectableCopiableTile(
-                                  title: 'METHOD',
-                                  subtitle: widget.entry.request.method,
-                                ),
-                                const Divider(height: 0.0),
-                                SelectableCopiableTile(
-                                  title: 'URL',
-                                  subtitle: widget.entry.request.url,
-                                ),
-                                const Divider(height: 0.0),
-                                SelectableCopiableTile(
-                                  title: 'HEADERS',
-                                  subtitle: widget.entry.request.headers.prettyJson,
-                                  highlight: true,
-                                ),
-                                if (widget.entry.request.method != 'GET') ...[
-                                  const Divider(height: 0.0),
-                                  SelectableCopiableTile(
-                                    title: 'BODY',
-                                    subtitle: widget.entry.request.body.prettyJson,
-                                    highlight: true,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          Scrollbar(
-                            controller: _scrollController2,
-                            child: ListView(
-                              controller: _scrollController2,
-                              children: [
-                                SelectableCopiableTile(
-                                  title: 'STATUS CODE',
-                                  subtitle: widget.entry.response.statusCode.toString(),
-                                ),
-                                const Divider(height: 0.0),
-                                SelectableCopiableTile(
-                                  title: 'HEADERS',
-                                  subtitle: widget.entry.response.headers.prettyJson,
-                                  highlight: true,
-                                ),
+              child: Column(
+                children: [
+                  TabBar(
+                    controller: _tabController,
+                    tabs: const [
+                      Tab(text: 'Request'),
+                      Tab(text: 'Response'),
+                    ],
+                  ),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        Scrollbar(
+                          controller: _requestController,
+                          child: ListView(
+                            controller: _requestController,
+                            children: [
+                              SelectableCopiableTile(
+                                title: 'METHOD',
+                                subtitle: widget.entry.request.method,
+                              ),
+                              const Divider(height: 0.0),
+                              SelectableCopiableTile(
+                                title: 'URL',
+                                subtitle: widget.entry.request.url,
+                              ),
+                              const Divider(height: 0.0),
+                              SelectableCopiableTile(
+                                title: 'HEADERS',
+                                subtitle: widget.entry.request.headers.prettyJson,
+                                highlight: true,
+                              ),
+                              if (widget.entry.request.method != 'GET') ...[
                                 const Divider(height: 0.0),
                                 SelectableCopiableTile(
                                   title: 'BODY',
-                                  subtitle: widget.entry.response.body.prettyJson,
+                                  subtitle: widget.entry.request.body.prettyJson,
                                   highlight: true,
                                   searchQuery: _searchQuery,
                                   currentMatchIndex: _currentMatchIndex,
-                                  currentMatchKey: _currentMatchKey,
+                                  currentMatchKey: _requestBodyMatchKey,
                                 ),
                               ],
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                        Scrollbar(
+                          controller: _responseController,
+                          child: ListView(
+                            controller: _responseController,
+                            children: [
+                              SelectableCopiableTile(
+                                title: 'STATUS CODE',
+                                subtitle: widget.entry.response.statusCode.toString(),
+                              ),
+                              const Divider(height: 0.0),
+                              SelectableCopiableTile(
+                                title: 'HEADERS',
+                                subtitle: widget.entry.response.headers.prettyJson,
+                                highlight: true,
+                              ),
+                              const Divider(height: 0.0),
+                              SelectableCopiableTile(
+                                title: 'BODY',
+                                subtitle: widget.entry.response.body.prettyJson,
+                                highlight: true,
+                                searchQuery: _searchQuery,
+                                currentMatchIndex: _currentMatchIndex,
+                                currentMatchKey: _responseBodyMatchKey,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],

@@ -79,7 +79,7 @@ class _TraceXSearchBarState extends State<TraceXSearchBar> {
                     : null,
               ),
               onChanged: widget.onSearch,
-              onSubmitted: (_) => widget.onNext(),
+              // onSubmitted: (_) => widget.onNext(),
             ),
           ),
           const SizedBox(width: 8),

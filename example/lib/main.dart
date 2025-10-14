@@ -1,12 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:tracex/tracex.dart';
 
 final TraceX tracex = TraceX(
   buttonSize: 48.0,
   edgeMargin: 6.0,
   customFab: (isOpen) => MyCustomFab(isOpen: isOpen),
+  onShare: (data) => SharePlus.instance.share(ShareParams(text: data)),
   logger: TraceXPrettyLogger(
     enabled: kDebugMode,
     compact: true,

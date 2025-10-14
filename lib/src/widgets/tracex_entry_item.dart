@@ -7,9 +7,11 @@ import 'package:tracex/tracex.dart';
 
 class TraceXEntryItem extends StatelessWidget {
   final TraceXEntry entry;
+  final TraceX instance;
 
   const TraceXEntryItem(
     this.entry, {
+    required this.instance,
     super.key,
   });
 
@@ -18,6 +20,7 @@ class TraceXEntryItem extends StatelessWidget {
     if (entry is TraceXNetworkEntry) {
       return _NetworkItem(
         entry: entry as TraceXNetworkEntry,
+        instance: instance,
       );
     }
 
@@ -27,9 +30,11 @@ class TraceXEntryItem extends StatelessWidget {
 
 class _NetworkItem extends StatelessWidget {
   final TraceXNetworkEntry entry;
+  final TraceX instance;
 
   const _NetworkItem({
     required this.entry,
+    required this.instance,
   });
 
   @override
@@ -39,7 +44,7 @@ class _NetworkItem extends StatelessWidget {
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) {
-              return TraceXDetailsScreen(entry);
+              return TraceXDetailsScreen(entry, instance: instance);
             },
           ),
         );

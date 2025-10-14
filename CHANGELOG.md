@@ -15,3 +15,7 @@ Update readme
 
 Implement json highlight
 Enable/disable functionality
+
+## 1.2.0
+
+Implement search and share functionality

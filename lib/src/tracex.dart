@@ -6,6 +6,7 @@ import 'package:tracex/tracex.dart';
 class TraceX {
   final TraceXPrettyLogger logger;
   final Widget Function(bool isOpen)? customFab;
+  final Function(String data)? onShare;
   final double buttonSize;
   final double edgeMargin;
   final int logBufferLength;
@@ -13,6 +14,7 @@ class TraceX {
   TraceX({
     required this.logger,
     this.customFab,
+    this.onShare,
     this.buttonSize = 48.0,
     this.edgeMargin = 6.0,
     this.logBufferLength = 2500,
