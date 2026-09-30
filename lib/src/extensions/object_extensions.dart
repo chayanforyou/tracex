@@ -19,7 +19,7 @@ extension LogarteNullableStringXs on Object? {
         for (final field in source.fields) {
           try {
             data[field.key] = jsonDecode(field.value);
-          } catch(_) {
+          } catch (_) {
             data[field.key] = field.value;
           }
         }

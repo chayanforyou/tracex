@@ -18,6 +18,10 @@ Enable/disable functionality
 
 ## 1.2.0
 
+Implement json highlight Enable/disable functionality
+
+## 1.3.0
+
 Fix MaterialLocalizations missing error
 Fix log buffer trimming logic
 Support FormData in network logs

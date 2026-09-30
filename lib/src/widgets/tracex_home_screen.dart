@@ -63,6 +63,7 @@ class _TraceXHomeScreenState extends State<TraceXHomeScreen> {
           builder: (_, value, child) {
             return _List(
               logs: value,
+              instance: widget.instance,
               controller: _controller,
             );
           },
@@ -75,9 +76,12 @@ class _TraceXHomeScreenState extends State<TraceXHomeScreen> {
 class _List extends StatelessWidget {
   const _List({
     required this.logs,
+    required this.instance,
     required this.controller,
   });
 
+
+  final TraceX instance;
   final List<TraceXEntry> logs;
   final TextEditingController controller;
 
@@ -108,7 +112,7 @@ class _List extends StatelessWidget {
                       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                       itemBuilder: (_, index) {
                         final log = filtered[index];
-                        return TraceXEntryItem(log);
+                        return TraceXEntryItem(log, instance: instance);
                       },
                       separatorBuilder: (_, index) => const Divider(height: 1),
                     ),
@@ -121,7 +125,8 @@ class _List extends StatelessWidget {
         child: TextField(
           controller: controller,
           decoration: InputDecoration(
-            hintText: 'Search',
+            hintText: 'Search...',
+            isDense: true,
             border: OutlineInputBorder(),
             prefixIcon: const Icon(Icons.search),
             suffixIcon: IconButton(

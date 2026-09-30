@@ -24,6 +24,7 @@ class TraceXThemeWrapper extends StatelessWidget {
       data: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: TraceXColors.blue,
+        dividerColor: TraceXColors.grey,
         dividerTheme: DividerThemeData(
           color: TraceXColors.grey,
         ),
