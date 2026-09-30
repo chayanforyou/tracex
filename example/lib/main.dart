@@ -1,11 +1,14 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:tracex/tracex.dart';
 
 final TraceX tracex = TraceX(
   buttonSize: 48.0,
   edgeMargin: 6.0,
+  logBufferLength: 5,
   customFab: (isOpen) => MyCustomFab(isOpen: isOpen),
   logger: TraceXPrettyLogger(
     enabled: kDebugMode,
@@ -89,62 +92,66 @@ class HomePageState extends State<HomePage> {
               },
             ),
             const Divider(height: 40),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'HTTP Requests',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                FilledButton.tonal(
-                  onPressed: () async {
-                    try {
-                      await _dio.get('https://jsonplaceholder.typicode.com/posts');
-                    } catch (e) {
-                      tracex.log(e);
-                    }
+            Text(
+              'HTTP Requests',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            FilledButton.tonal(
+              onPressed: () async {
+                await _dio.get('https://jsonplaceholder.typicode.com/posts');
+              },
+              child: const Text('GET'),
+            ),
+            FilledButton.tonal(
+              onPressed: () async {
+                await _dio.post(
+                  'https://jsonplaceholder.typicode.com/posts',
+                  data: {
+                    'title': 'TraceX Test Post',
+                    'body': 'This is a test post body',
+                    'userId': 1,
                   },
-                  child: const Text('GET'),
-                ),
-                FilledButton.tonal(
-                  onPressed: () async {
-                    try {
-                      await _dio.post(
-                        'https://jsonplaceholder.typicode.com/posts',
-                        data: {
-                          'title': 'TraceX Test Post',
-                          'body': 'This is a test post body',
-                          'userId': 1,
-                        },
-                      );
-                    } catch (e) {
-                      tracex.log(e);
-                    }
-                  },
-                  child: const Text('POST'),
-                ),
-                FilledButton.tonal(
-                  onPressed: () async {
-                    try {
-                      await _dio.put('https://jsonplaceholder.typicode.com/posts');
-                    } catch (e) {
-                      tracex.log(e);
-                    }
-                  },
-                  child: const Text('PUT'),
-                ),
-                FilledButton.tonal(
-                  onPressed: () async {
-                    try {
-                      await _dio.delete('https://jsonplaceholder.typicode.com/posts/1');
-                    } catch (e) {
-                      tracex.log(e);
-                    }
-                  },
-                  child: const Text('DELETE'),
-                ),
-              ],
+                );
+              },
+              child: const Text('POST'),
+            ),
+            FilledButton.tonal(
+              onPressed: () async {
+                // Create dummy file
+                final tempDir = Directory.systemTemp;
+                final dummyFile = File('${tempDir.path}/dummy_upload.jpg');
+
+                // Write random bytes
+                await dummyFile
+                    .writeAsBytes(List.generate(100, (i) => i % 255));
+
+                final formData = FormData.fromMap({
+                  "title": "Dummy Post",
+                  "description": "Testing multipart upload",
+                  "user_id": 123,
+                  "image": await MultipartFile.fromFile(dummyFile.path,
+                      filename: "dummy_upload.jpg"),
+                });
+
+                await _dio.post(
+                  'https://jsonplaceholder.typicode.com/posts',
+                  data: formData,
+                );
+              },
+              child: const Text('POST With Multipart Body'),
+            ),
+            FilledButton.tonal(
+              onPressed: () async {
+                await _dio.put('https://jsonplaceholder.typicode.com/posts');
+              },
+              child: const Text('PUT'),
+            ),
+            FilledButton.tonal(
+              onPressed: () async {
+                await _dio.delete('https://jsonplaceholder.typicode.com/posts');
+              },
+              child: const Text('DELETE'),
             ),
           ],
         ),

@@ -15,16 +15,18 @@ class TraceX {
     this.customFab,
     this.buttonSize = 48.0,
     this.edgeMargin = 6.0,
-    this.logBufferLength = 2500,
+    this.logBufferLength = 500,
   });
 
   final logs = ValueNotifier(<TraceXEntry>[]);
 
   void _add(TraceXEntry entry) {
-    if (logs.value.length > logBufferLength) {
-      logs.value.removeAt(0);
+    if (logBufferLength <= 0) return;
+    final updated = [entry, ...logs.value];
+    if (updated.length > logBufferLength) {
+      updated.removeRange(logBufferLength, updated.length);
     }
-    logs.value = [entry, ...logs.value];
+    logs.value = updated;
   }
 
   void log(Object? message, {StackTrace? stackTrace}) {
@@ -67,7 +69,7 @@ class TraceX {
   }
 
   Future<void> openConsole(BuildContext context) async {
-    return Navigator.of(context).push<void>(
+    await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (_) => TraceXHomeScreen(this),
       ),

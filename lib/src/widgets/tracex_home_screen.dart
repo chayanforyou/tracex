@@ -52,8 +52,8 @@ class _TraceXHomeScreenState extends State<TraceXHomeScreen> {
               onPressed: () {
                 widget.instance.clear();
               },
-              icon: const Icon(Icons.clear_all),
-              tooltip: 'Clear Logs',
+              icon: const Icon(Icons.delete_forever_rounded),
+              tooltip: 'Clear All Logs',
             ),
             const SizedBox(width: 12),
           ],

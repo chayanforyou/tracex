@@ -6,7 +6,6 @@ import 'package:tracex/src/core/tracex_fab_state.dart';
 import 'package:tracex/src/widgets/tracex_home_screen.dart';
 import 'package:tracex/tracex.dart';
 
-
 class TraceXOverlay extends StatelessWidget {
   final TraceX instance;
 

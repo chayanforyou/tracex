@@ -11,6 +11,15 @@ class TraceXThemeWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget content = Localizations(
+      locale: Localizations.maybeLocaleOf(context) ?? const Locale('en', 'US'),
+      delegates: const [
+        DefaultMaterialLocalizations.delegate,
+        DefaultWidgetsLocalizations.delegate,
+      ],
+      child: child,
+    );
+
     return Theme(
       data: ThemeData(
         useMaterial3: true,
@@ -31,7 +40,7 @@ class TraceXThemeWrapper extends StatelessWidget {
           ),
         ),
       ),
-      child: child,
+      child: content,
     );
   }
 }
