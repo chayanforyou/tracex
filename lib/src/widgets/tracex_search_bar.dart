@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:tracex/src/constants/tracex_colors.dart';
 
@@ -26,6 +28,10 @@ class TraceXSearchBar extends StatefulWidget {
 class _TraceXSearchBarState extends State<TraceXSearchBar> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  Timer? _debounce;
+
+  /// Searching a large body scans every node, so wait for typing to pause.
+  static const _debounceDuration = Duration(milliseconds: 250);
 
   @override
   void initState() {
@@ -38,6 +44,7 @@ class _TraceXSearchBarState extends State<TraceXSearchBar> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -72,13 +79,22 @@ class _TraceXSearchBarState extends State<TraceXSearchBar> {
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                         onPressed: () {
+                          _debounce?.cancel();
                           _controller.clear();
                           widget.onSearch('');
                         },
                       )
                     : null,
               ),
-              onChanged: widget.onSearch,
+              onChanged: (query) {
+                // Rebuild now so the clear button and counter follow the text
+                setState(() {});
+                _debounce?.cancel();
+                _debounce = Timer(
+                  _debounceDuration,
+                  () => widget.onSearch(query),
+                );
+              },
               // onSubmitted: (_) => widget.onNext(),
             ),
           ),

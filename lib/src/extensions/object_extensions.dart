@@ -2,7 +2,13 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
-extension LogarteNullableStringXs on Object? {
+const _encoder = JsonEncoder.withIndent('  ', _toEncodable);
+
+/// Values JSON can't represent (DateTime, enums, custom objects) are shown
+/// as their `toString()` instead of failing the whole body.
+Object? _toEncodable(Object? value) => value.toString();
+
+extension TraceXObjectExt on Object? {
   String get prettyJson {
     try {
       final source = this;
@@ -13,35 +19,48 @@ extension LogarteNullableStringXs on Object? {
 
       // Handle FormData
       if (source is FormData) {
-        final Map<String, dynamic> data = {};
+        // A key can repeat (e.g. `tags[]` or several files), so collect
+        // every value per key.
+        final Map<String, List<Object?>> values = {};
 
         // normal fields
         for (final field in source.fields) {
+          // Form fields are always strings on the wire. Only expand fields
+          // holding a JSON object or array; "123" or "true" stay strings.
+          Object? value = field.value;
           try {
-            data[field.key] = jsonDecode(field.value);
-          } catch (_) {
-            data[field.key] = field.value;
-          }
+            final decoded = jsonDecode(field.value);
+            if (decoded is Map || decoded is List) value = decoded;
+          } catch (_) {}
+          values.putIfAbsent(field.key, () => []).add(value);
         }
 
         // files
         for (final file in source.files) {
           final multipart = file.value;
 
-          data[file.key] = multipart.filename ?? 'file';
+          values
+              .putIfAbsent(file.key, () => [])
+              .add(multipart.filename ?? 'file');
         }
 
-        return const JsonEncoder.withIndent('  ').convert(data);
+        final data = {
+          for (final entry in values.entries)
+            entry.key:
+                entry.value.length == 1 ? entry.value.single : entry.value,
+        };
+
+        return _encoder.convert(data);
       }
 
       // Handle String JSON
       if (source is String) {
         final decoded = jsonDecode(source);
-        return const JsonEncoder.withIndent('  ').convert(decoded);
+        return _encoder.convert(decoded);
       }
 
       // Handle Map/List
-      return const JsonEncoder.withIndent('  ').convert(source);
+      return _encoder.convert(source);
     } catch (_) {
       return toString();
     }

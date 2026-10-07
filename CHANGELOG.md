@@ -26,3 +26,11 @@ Fix MaterialLocalizations missing error
 Fix log buffer trimming logic
 Support FormData in network logs
 
+
+## 1.4.0
+
+- Add interactive JSON tree viewer with search, expand/collapse all
+- Fast viewing of large JSON bodies (lazy rendering, background parsing)
+- Improve FormData display (repeated keys, field types)
+- Add search debounce and loading skeleton
+- Fix interceptor memory leak and missing duration on errors

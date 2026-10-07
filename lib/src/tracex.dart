@@ -4,11 +4,22 @@ import 'package:tracex/src/widgets/tracex_home_screen.dart';
 import 'package:tracex/tracex.dart';
 
 class TraceX {
+  /// Prints logs to the console.
   final TraceXPrettyLogger logger;
+
+  /// Custom floating button; [isOpen] is true while the console is open.
   final Widget Function(bool isOpen)? customFab;
+
+  /// Called with the text to share from the details screen.
   final Function(String data)? onShare;
+
+  /// Size of the floating button.
   final double buttonSize;
+
+  /// Gap between the floating button and the screen edge.
   final double edgeMargin;
+
+  /// Max logs kept in memory; older ones are dropped.
   final int logBufferLength;
 
   TraceX({
@@ -17,9 +28,10 @@ class TraceX {
     this.onShare,
     this.buttonSize = 48.0,
     this.edgeMargin = 6.0,
-    this.logBufferLength = 500,
+    this.logBufferLength = 100,
   });
 
+  /// Recent logs, newest first.
   final logs = ValueNotifier(<TraceXEntry>[]);
 
   void _add(TraceXEntry entry) {
@@ -31,10 +43,12 @@ class TraceX {
     logs.value = updated;
   }
 
+  /// Prints [message] to the console. It is not shown in the TraceX console.
   void log(Object? message, {StackTrace? stackTrace}) {
     logger.logMessage(message.toString(), stackTrace: stackTrace);
   }
 
+  /// Records a network call: prints it and adds it to [logs].
   void network({
     required NetworkRequestEntry request,
     required NetworkResponseEntry response,
@@ -50,6 +64,7 @@ class TraceX {
     } catch (_) {}
   }
 
+  /// Shows the floating button when [visible] is true.
   void attach({
     required BuildContext context,
     required bool visible,
@@ -70,6 +85,7 @@ class TraceX {
     TraceXOverlay.detach();
   }
 
+  /// Opens the TraceX console screen.
   Future<void> openConsole(BuildContext context) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
@@ -78,6 +94,7 @@ class TraceX {
     );
   }
 
+  /// Removes all logs.
   void clear() {
     logs.value = [];
   }

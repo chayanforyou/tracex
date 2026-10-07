@@ -1,7 +1,8 @@
-import 'dart:io';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:material_ui/material_ui.dart';
 import 'package:tracex/tracex.dart';
 
@@ -69,6 +70,14 @@ class HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  /// Runs [request] and swallows [DioException]s, which
+  /// [TraceXDioInterceptor] has already logged.
+  Future<void> _send(Future<Response> Function() request) async {
+    try {
+      await request();
+    } on DioException catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -99,59 +108,111 @@ class HomePageState extends State<HomePage> {
             const SizedBox(height: 12),
             FilledButton.tonal(
               onPressed: () async {
-                await _dio.get('https://jsonplaceholder.typicode.com/posts');
+                await _send(() =>
+                    _dio.get('https://jsonplaceholder.typicode.com/posts'));
               },
               child: const Text('GET'),
             ),
             FilledButton.tonal(
               onPressed: () async {
-                await _dio.post(
-                  'https://jsonplaceholder.typicode.com/posts',
-                  data: {
-                    'title': 'TraceX Test Post',
-                    'body': 'This is a test post body',
-                    'userId': 1,
-                  },
+                final jsonString =
+                    await rootBundle.loadString('assets/sample.json');
+                final data = jsonDecode(jsonString);
+
+                await _send(
+                  () => _dio.post('https://jsonplaceholder.typicode.com/posts',
+                      data: data),
                 );
               },
-              child: const Text('POST'),
+              child: const Text('POST (sample.json)'),
             ),
             FilledButton.tonal(
               onPressed: () async {
-                // Create dummy file
-                final tempDir = Directory.systemTemp;
-                final dummyFile = File('${tempDir.path}/dummy_upload.jpg');
+                final jsonString =
+                    await rootBundle.loadString('assets/large_sample.json');
+                final data = jsonDecode(jsonString);
 
-                // Write random bytes
-                await dummyFile
-                    .writeAsBytes(List.generate(100, (i) => i % 255));
-
-                final formData = FormData.fromMap({
-                  "title": "Dummy Post",
-                  "description": "Testing multipart upload",
-                  "user_id": 123,
-                  "image": await MultipartFile.fromFile(dummyFile.path,
-                      filename: "dummy_upload.jpg"),
-                });
-
-                await _dio.post(
-                  'https://jsonplaceholder.typicode.com/posts',
-                  data: formData,
+                await _send(
+                  () => _dio.post('https://jsonplaceholder.typicode.com/posts',
+                      data: data),
                 );
               },
-              child: const Text('POST With Multipart Body'),
+              child: const Text('POST (large_sample.json)'),
             ),
             FilledButton.tonal(
               onPressed: () async {
-                await _dio.put('https://jsonplaceholder.typicode.com/posts');
+                // Built in memory, so no temp files and it also runs on web.
+                // Shows each kind of field TraceX formats: plain strings,
+                // a JSON field, a repeated key, a single file and several
+                // files under one key.
+                final formData = FormData()
+                  ..fields.addAll([
+                    const MapEntry('title', 'Weekend trip'),
+                    const MapEntry('user_id', '123'),
+                    const MapEntry('is_public', 'true'),
+                    MapEntry(
+                      'location',
+                      jsonEncode({'lat': 23.8103, 'lng': 90.4125}),
+                    ),
+                    const MapEntry('tags[]', 'travel'),
+                    const MapEntry('tags[]', 'beach'),
+                  ])
+                  ..files.addAll([
+                    MapEntry(
+                      'photo',
+                      MultipartFile.fromBytes(
+                        List.generate(2048, (i) => i % 256),
+                        filename: 'beach.jpg',
+                        contentType: DioMediaType('image', 'jpeg'),
+                      ),
+                    ),
+                    MapEntry(
+                      'attachments',
+                      MultipartFile.fromString(
+                        'Pack sunscreen.\nLeave at 7am.',
+                        filename: 'notes.txt',
+                        contentType: DioMediaType('text', 'plain'),
+                      ),
+                    ),
+                    MapEntry(
+                      'attachments',
+                      MultipartFile.fromBytes(
+                        List.generate(4096, (i) => (i * 7) % 256),
+                        filename: 'itinerary.pdf',
+                        contentType: DioMediaType('application', 'pdf'),
+                      ),
+                    ),
+                  ]);
+
+                await _send(
+                  () => _dio.post(
+                    'https://jsonplaceholder.typicode.com/posts',
+                    data: formData,
+                  ),
+                );
+              },
+              child: const Text('POST (Multipart Body)'),
+            ),
+            FilledButton.tonal(
+              onPressed: () async {
+                await _send(() =>
+                    _dio.put('https://jsonplaceholder.typicode.com/posts/1'));
               },
               child: const Text('PUT'),
             ),
             FilledButton.tonal(
               onPressed: () async {
-                await _dio.delete('https://jsonplaceholder.typicode.com/posts');
+                await _send(() => _dio
+                    .delete('https://jsonplaceholder.typicode.com/posts/1'));
               },
               child: const Text('DELETE'),
+            ),
+            FilledButton.tonal(
+              onPressed: () async {
+                await _send(() =>
+                    _dio.get('https://jsonplaceholder.typicode.com/invalid'));
+              },
+              child: const Text('Error (404)'),
             ),
           ],
         ),

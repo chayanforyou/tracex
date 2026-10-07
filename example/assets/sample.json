@@ -1,0 +1,155 @@
+{
+  "meta": {
+    "requestId": "req_8f3a2c1e-4b7d-4e9a-9c0f-1d2e3f4a5b6c",
+    "version": "2.4.1",
+    "timestamp": "2026-10-08T09:30:00.000Z",
+    "success": true,
+    "cached": false,
+    "nextCursor": null,
+    "durationMs": 142,
+    "serverLoad": 0.375
+  },
+  "primitives": {
+    "string": "Hello, TraceX!",
+    "emptyString": "",
+    "whitespaceString": "   ",
+    "integer": 42,
+    "zero": 0,
+    "negativeInteger": -17,
+    "largeInteger": 9007199254740991,
+    "float": 3.14159,
+    "negativeFloat": -0.0025,
+    "exponent": 6.022e23,
+    "smallExponent": 1.6e-19,
+    "booleanTrue": true,
+    "booleanFalse": false,
+    "nullValue": null
+  },
+  "strings": {
+    "unicode": "Café ☕ — naïve résumé, 日本語, Ελληνικά, हिन्दी",
+    "emoji": "🚀🔥✅",
+    "escaped": "Quote: \"hi\", backslash: \\, tab:\t, newline:\nend",
+    "unicodeEscape": "© ™ €",
+    "url": "https://api.example.com/v1/items?page=2&limit=20",
+    "email": "jane.doe@example.com",
+    "uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "isoDate": "2026-01-15",
+    "isoDateTime": "2026-01-15T14:22:05+05:30",
+    "numericString": "6400003666",
+    "booleanString": "true",
+    "nullString": "null",
+    "html": "<p class=\"note\">Hello <b>world</b></p>",
+    "longText": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
+  },
+  "collections": {
+    "emptyObject": {},
+    "emptyArray": [],
+    "stringArray": ["alpha", "beta", "gamma"],
+    "numberArray": [1, 2.5, -3, 0, 1e3],
+    "booleanArray": [true, false, true],
+    "nullArray": [null, null],
+    "mixedArray": ["text", 7, 7.7, true, null, { "key": "value" }, [1, 2]],
+    "nestedArrays": [[1, 2], [3, [4, [5, []]]], []],
+    "arrayOfEmpty": [{}, [], ""]
+  },
+  "deepNesting": {
+    "level1": {
+      "level2": {
+        "level3": {
+          "level4": {
+            "level5": {
+              "message": "You reached the bottom",
+              "depth": 5,
+              "tags": ["deep", "nested"]
+            }
+          }
+        }
+      }
+    }
+  },
+  "items": [
+    {
+      "id": 1001,
+      "code": "MOCK-0001",
+      "name": "Sample Widget A",
+      "description": "A fully populated mock item.",
+      "category": "SAMPLE",
+      "active": true,
+      "price": 199.99,
+      "discount": null,
+      "quantity": 12,
+      "tags": ["new", "featured"],
+      "dimensions": { "width": 10.5, "height": 4, "depth": 2.25, "unit": "cm" },
+      "status": { "value": "IN_STOCK", "label": "In Stock" },
+      "createdAt": "2025-12-01T08:00:00Z",
+      "updatedAt": null
+    },
+    {
+      "id": 1002,
+      "code": "MOCK-0002",
+      "name": "Sample Widget B",
+      "description": null,
+      "category": "PROMO",
+      "active": false,
+      "price": 0,
+      "discount": 0.15,
+      "quantity": 0,
+      "tags": [],
+      "dimensions": {},
+      "status": { "value": "OUT_OF_STOCK", "label": "Out of Stock" },
+      "createdAt": "2025-11-20T16:45:30Z",
+      "updatedAt": "2026-02-03T10:12:00Z"
+    },
+    {
+      "id": 1003,
+      "code": "MOCK-0003",
+      "name": "Sample Widget C",
+      "description": "",
+      "category": "GIFT",
+      "active": true,
+      "price": -5.5,
+      "discount": 1,
+      "quantity": -2,
+      "tags": ["refund", "adjustment"],
+      "dimensions": null,
+      "status": { "value": "BACKORDER", "label": "Backorder" },
+      "createdAt": "2026-03-10T00:00:00Z",
+      "updatedAt": "2026-03-10T00:00:01Z"
+    }
+  ],
+  "user": {
+    "id": 501,
+    "username": "mock_user",
+    "displayName": "Mock User",
+    "verified": true,
+    "roles": ["admin", "editor"],
+    "profile": {
+      "avatarUrl": "https://example.com/avatars/501.png",
+      "bio": null,
+      "age": 29,
+      "rating": 4.8,
+      "address": {
+        "line1": "123 Example Street",
+        "line2": null,
+        "city": "Sample City",
+        "postalCode": "00000",
+        "country": "XX",
+        "geo": { "lat": 23.8103, "lng": 90.4125 }
+      }
+    },
+    "preferences": {
+      "theme": "dark",
+      "notifications": { "email": true, "push": false, "sms": null },
+      "languages": ["en", "bn"]
+    }
+  },
+  "pagination": {
+    "page": 1,
+    "pageSize": 3,
+    "totalItems": 3,
+    "totalPages": 1,
+    "hasNext": false,
+    "hasPrevious": false
+  },
+  "errors": []
+}

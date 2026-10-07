@@ -5,6 +5,12 @@ Advanced In-App Debugging Console for Flutter Applications with Network Monitori
 [![pub package](https://img.shields.io/pub/v/tracex.svg)](https://pub.dev/packages/tracex)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+##  Screenshots
+
+| Console               | Network Logs          | Custom FAB        |
+|-----------------------|-----------------------|-------------------|
+| ![Console](doc/1.png) | ![Network](doc/2.png) | ![FAB](doc/3.png) |
+
 ## Features
 
 *  **In-app console**: Monitor your app inside your app
@@ -17,19 +23,13 @@ Advanced In-App Debugging Console for Flutter Applications with Network Monitori
 *  **Performance optimized**: Lightweight and efficient
 *  **Theme support**: Adapts to your app's theme
 
-##  Screenshots
-
-| Console               | Network Logs          | Custom FAB        |
-|-----------------------|-----------------------|-------------------|
-| ![Console](doc/1.png) | ![Network](doc/2.png) | ![FAB](doc/3.png) |
-
 ##  Getting Started
 
 ### Add to pubspec.yaml
 
 ```yaml
 dependencies:
-  tracex: ^1.1.2
+  tracex: ^1.4.0
 ```
 
 Then run `flutter pub get`.
@@ -57,7 +57,7 @@ final TraceX tracex = TraceX(
   edgeMargin: 6.0,
   
   // Log buffer length
-  logBufferLength: 2500,
+  logBufferLength: 100,
 );
 ```
 

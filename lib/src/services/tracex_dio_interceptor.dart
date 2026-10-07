@@ -20,7 +20,7 @@ class TraceXDioInterceptor extends Interceptor {
     final Map<String, String> responseHeaders = response.headers.map.map(
           (key, value) => MapEntry(key, value.join(', ')),
     );
-    final sentAt = _cache[response.requestOptions];
+    final sentAt = _cache.remove(response.requestOptions);
     final receivedAt = DateTime.now();
 
     _tracex.network(
@@ -54,11 +54,13 @@ class TraceXDioInterceptor extends Interceptor {
         method: err.requestOptions.method,
         headers: err.requestOptions.headers,
         body: err.requestOptions.data,
+        sentAt: _cache.remove(err.requestOptions),
       ),
       response: NetworkResponseEntry(
         statusCode: err.response?.statusCode ?? 0,
         headers: responseHeaders,
         body: err.response?.data,
+        receivedAt: DateTime.now(),
       ),
     );
 
