@@ -24,6 +24,11 @@ class TraceXNetworkEntry extends TraceXEntry {
     required this.response,
   }) : super();
 
+  /// Readable size of the response body. Cached because stringifying a large
+  /// body is expensive and the log list shows this on every rebuild.
+  late final String responseSize =
+      (response.body?.toString() ?? '').asReadableSize;
+
   @override
   List<String> get contents => [
         request.url,
@@ -40,7 +45,7 @@ class TraceXNetworkEntry extends TraceXEntry {
   @override
   String toString() {
     final duration = asReadableDuration;
-    final size = response.body?.toString().asReadableSize ?? '0B';
+    final size = responseSize;
     final statusText =
         response.statusCode != null ? '${response.statusCode} ${_getStatusText(response.statusCode!)}' : 'No Response';
 

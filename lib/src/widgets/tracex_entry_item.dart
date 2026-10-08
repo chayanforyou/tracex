@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tracex/src/constants/tracex_colors.dart';
 import 'package:tracex/src/extensions/entry_extensions.dart';
-import 'package:tracex/src/extensions/string_extensions.dart';
 import 'package:tracex/src/widgets/tracex_details_screen.dart';
 import 'package:tracex/tracex.dart';
 
@@ -81,7 +80,7 @@ class _NetworkItem extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 2.0),
             child: Text(
-              '${entry.timeFormatted} • ${'${entry.asReadableDuration} • ${entry.response.body.toString().asReadableSize}'}',
+              '${entry.timeFormatted} • ${'${entry.asReadableDuration} • ${entry.responseSize}'}',
               style: const TextStyle(
                 fontSize: 12.0,
                 color: Colors.grey,

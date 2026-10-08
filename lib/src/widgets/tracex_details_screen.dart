@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:tracex/src/extensions/entry_extensions.dart';
 import 'package:tracex/src/extensions/object_extensions.dart';
 import 'package:tracex/src/extensions/string_extensions.dart';
-import 'package:tracex/src/highlight/json_highlight_search.dart';
+import 'package:tracex/src/widgets/json_skeleton.dart';
+import 'package:tracex/src/widgets/json_tree_viewer.dart';
 import 'package:tracex/src/widgets/tracex_search_bar.dart';
 import 'package:tracex/src/widgets/tracex_theme_wrapper.dart';
 import 'package:tracex/tracex.dart';
@@ -23,9 +25,8 @@ class TraceXDetailsScreen extends StatefulWidget {
   State<TraceXDetailsScreen> createState() => _TraceXDetailsScreenState();
 }
 
-class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> with SingleTickerProviderStateMixin{
-  final GlobalKey _requestBodyMatchKey = GlobalKey();
-  final GlobalKey _responseBodyMatchKey = GlobalKey();
+class _TraceXDetailsScreenState extends State<TraceXDetailsScreen>
+    with SingleTickerProviderStateMixin {
   final ScrollController _requestController = ScrollController();
   final ScrollController _responseController = ScrollController();
   late final TabController _tabController;
@@ -35,18 +36,31 @@ class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> with SingleTi
   int _currentMatchIndex = 0;
   int _totalMatches = 0;
 
+  /// Search match count reported by the body viewer of each tab.
+  final List<int> _matchCounts = [0, 0];
+
+  // Encoding a large body is expensive, so do it once rather than per build,
+  // and do it for the bodies off the UI thread.
+  late final String _title =
+      '${widget.entry.asReadableDuration}, ${widget.entry.responseSize}';
+  late final String _requestHeaders = widget.entry.request.headers.prettyJson;
+  late final Future<String> _requestBody =
+      _prettyJsonInBackground(widget.entry.request.body);
+  late final String _responseHeaders = widget.entry.response.headers.prettyJson;
+  late final Future<String> _responseBody =
+      _prettyJsonInBackground(widget.entry.response.body);
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
-      // Reset search count when switching tabs
-      if (_searchQuery.isNotEmpty) {
-        setState(() {
-          _totalMatches = _countMatches(_searchQuery);
-          _currentMatchIndex = 0;
-        });
-      }
+      if (_tabController.indexIsChanging) return;
+      // Show the active tab's match count when switching tabs
+      setState(() {
+        _totalMatches = _matchCounts[_tabController.index];
+        _currentMatchIndex = 0;
+      });
     });
   }
 
@@ -73,58 +87,89 @@ class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> with SingleTi
     setState(() {
       _searchQuery = query;
       _currentMatchIndex = 0;
-      _totalMatches = _countMatches(query);
     });
   }
 
-  int _countMatches(String query) {
-    if (query.isEmpty) return 0;
-
-    final textToSearch = _tabController.index == 0
-        ? widget.entry.request.body.prettyJson
-        : widget.entry.response.body.prettyJson;
-
-    final lowerText = textToSearch.toLowerCase();
-    final lowerQuery = query.toLowerCase();
-    int count = 0, index = 0;
-    while ((index = lowerText.indexOf(lowerQuery, index)) != -1) {
-      count++;
-      index += query.length;
+  void _onMatchCountChanged(int tab, int count) {
+    if (_matchCounts[tab] == count) return;
+    _matchCounts[tab] = count;
+    if (_tabController.index == tab) {
+      setState(() => _totalMatches = count);
     }
-
-    return count;
   }
+
+  /// Formats [body] in a background isolate when it can be sent to one.
+  /// Other bodies (e.g. [FormData], which holds file streams) are formatted
+  /// here.
+  static Future<String> _prettyJsonInBackground(Object? body) async {
+    if (body is Map || body is List || body is String) {
+      try {
+        return await compute(_prettyJsonOf, body);
+      } catch (_) {
+        // Not sendable, e.g. a Map holding a custom object.
+      }
+    }
+    return body.prettyJson;
+  }
+
+  Widget _bodyTile(int tab, Future<String> body) {
+    return FutureBuilder<String>(
+      future: body,
+      builder: (context, snapshot) {
+        final json = snapshot.data;
+        if (json == null) {
+          // Same padding and title row height as JsonTreeTile, so nothing
+          // jumps when the tree replaces this.
+          return SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 12.0),
+            sliver: SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    height: 40.0,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'BODY',
+                        style: Theme.of(context).listTileTheme.titleTextStyle,
+                      ),
+                    ),
+                  ),
+                  const JsonSkeleton(label: 'Formatting body…'),
+                ],
+              ),
+            ),
+          );
+        }
+        return JsonTreeTile(
+          title: 'BODY',
+          jsonString: json,
+          showExpandActions: true,
+          searchQuery: _searchQuery,
+          currentMatchIndex: _matchIndexFor(tab),
+          onMatchCountChanged: (count) => _onMatchCountChanged(tab, count),
+        );
+      },
+    );
+  }
+
+  /// Only the active tab highlights a current match and scrolls to it.
+  int _matchIndexFor(int tab) =>
+      _tabController.index == tab ? _currentMatchIndex : -1;
 
   void _goToNextMatch() {
     if (_totalMatches == 0) return;
     setState(() {
       _currentMatchIndex = (_currentMatchIndex + 1) % _totalMatches;
     });
-    _scrollToCurrentMatch();
   }
 
   void _goToPreviousMatch() {
     if (_totalMatches == 0) return;
     setState(() {
-      _currentMatchIndex = (_currentMatchIndex - 1 + _totalMatches) % _totalMatches;
-    });
-    _scrollToCurrentMatch();
-  }
-
-  void _scrollToCurrentMatch() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final context = _tabController.index == 0
-          ? _requestBodyMatchKey.currentContext
-          : _responseBodyMatchKey.currentContext;
-
-      if (context != null) {
-        Scrollable.ensureVisible(
-          context,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          alignment: 0.2,
-        );
-      }
+      _currentMatchIndex =
+          (_currentMatchIndex - 1 + _totalMatches) % _totalMatches;
     });
   }
 
@@ -155,7 +200,7 @@ class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> with SingleTi
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            '${widget.entry.asReadableDuration}, ${widget.entry.response.body.toString().asReadableSize}',
+            _title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -234,62 +279,58 @@ class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> with SingleTi
                       children: [
                         Scrollbar(
                           controller: _requestController,
-                          child: ListView(
+                          child: CustomScrollView(
                             controller: _requestController,
-                            children: [
-                              SelectableCopiableTile(
-                                title: 'METHOD',
-                                subtitle: widget.entry.request.method,
+                            slivers: [
+                              SliverToBoxAdapter(
+                                child: SelectableCopiableTile(
+                                  title: 'METHOD',
+                                  subtitle: widget.entry.request.method,
+                                ),
                               ),
-                              const Divider(height: 0.0),
-                              SelectableCopiableTile(
-                                title: 'URL',
-                                subtitle: widget.entry.request.url,
+                              const SliverToBoxAdapter(
+                                  child: Divider(height: 0.0)),
+                              SliverToBoxAdapter(
+                                child: SelectableCopiableTile(
+                                  title: 'URL',
+                                  subtitle: widget.entry.request.url,
+                                ),
                               ),
-                              const Divider(height: 0.0),
-                              SelectableCopiableTile(
+                              const SliverToBoxAdapter(
+                                  child: Divider(height: 0.0)),
+                              JsonTreeTile(
                                 title: 'HEADERS',
-                                subtitle: widget.entry.request.headers.prettyJson,
-                                highlight: true,
+                                jsonString: _requestHeaders,
                               ),
                               if (widget.entry.request.method != 'GET') ...[
-                                const Divider(height: 0.0),
-                                SelectableCopiableTile(
-                                  title: 'BODY',
-                                  subtitle: widget.entry.request.body.prettyJson,
-                                  highlight: true,
-                                  searchQuery: _searchQuery,
-                                  currentMatchIndex: _currentMatchIndex,
-                                  currentMatchKey: _requestBodyMatchKey,
-                                ),
+                                const SliverToBoxAdapter(
+                                    child: Divider(height: 0.0)),
+                                _bodyTile(0, _requestBody),
                               ],
                             ],
                           ),
                         ),
                         Scrollbar(
                           controller: _responseController,
-                          child: ListView(
+                          child: CustomScrollView(
                             controller: _responseController,
-                            children: [
-                              SelectableCopiableTile(
-                                title: 'STATUS CODE',
-                                subtitle: widget.entry.response.statusCode.toString(),
+                            slivers: [
+                              SliverToBoxAdapter(
+                                child: SelectableCopiableTile(
+                                  title: 'STATUS CODE',
+                                  subtitle: widget.entry.response.statusCode
+                                      .toString(),
+                                ),
                               ),
-                              const Divider(height: 0.0),
-                              SelectableCopiableTile(
+                              const SliverToBoxAdapter(
+                                  child: Divider(height: 0.0)),
+                              JsonTreeTile(
                                 title: 'HEADERS',
-                                subtitle: widget.entry.response.headers.prettyJson,
-                                highlight: true,
+                                jsonString: _responseHeaders,
                               ),
-                              const Divider(height: 0.0),
-                              SelectableCopiableTile(
-                                title: 'BODY',
-                                subtitle: widget.entry.response.body.prettyJson,
-                                highlight: true,
-                                searchQuery: _searchQuery,
-                                currentMatchIndex: _currentMatchIndex,
-                                currentMatchKey: _responseBodyMatchKey,
-                              ),
+                              const SliverToBoxAdapter(
+                                  child: Divider(height: 0.0)),
+                              _bodyTile(1, _responseBody),
                             ],
                           ),
                         ),
@@ -306,21 +347,16 @@ class _TraceXDetailsScreenState extends State<TraceXDetailsScreen> with SingleTi
   }
 }
 
+/// Top-level so it can run in a background isolate via [compute].
+String _prettyJsonOf(Object? body) => body.prettyJson;
+
 class SelectableCopiableTile extends StatelessWidget {
   final String title;
   final String subtitle;
-  final bool highlight;
-  final String searchQuery;
-  final int currentMatchIndex;
-  final GlobalKey? currentMatchKey;
 
   const SelectableCopiableTile({
     required this.title,
     required this.subtitle,
-    this.highlight = false,
-    this.searchQuery = '',
-    this.currentMatchIndex = 0,
-    this.currentMatchKey,
     super.key,
   });
 
@@ -331,17 +367,93 @@ class SelectableCopiableTile extends StatelessWidget {
       title: Text(title),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 4.0),
-        child: highlight ? JsonHighlightSearch(
-          subtitle,
-          searchQuery: searchQuery,
-          currentMatchIndex: currentMatchIndex,
-          currentMatchKey: currentMatchKey,
-        ) : Text(subtitle),
+        child: Text(subtitle),
       ),
     );
   }
 
   Future<void> _copyToClipboard(BuildContext context) {
     return subtitle.copyToClipboard(context);
+  }
+}
+
+/// A sliver that displays a title and a collapsible JSON tree viewer.
+class JsonTreeTile extends StatefulWidget {
+  final String title;
+  final String jsonString;
+  final String searchQuery;
+  final int currentMatchIndex;
+  final ValueChanged<int>? onMatchCountChanged;
+
+  /// Shows "Expand all" and "Collapse all" buttons next to the title.
+  final bool showExpandActions;
+
+  const JsonTreeTile({
+    required this.title,
+    required this.jsonString,
+    this.searchQuery = '',
+    this.currentMatchIndex = -1,
+    this.onMatchCountChanged,
+    this.showExpandActions = false,
+    super.key,
+  });
+
+  @override
+  State<JsonTreeTile> createState() => _JsonTreeTileState();
+}
+
+class _JsonTreeTileState extends State<JsonTreeTile> {
+  final JsonTreeController _treeController = JsonTreeController();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 12.0),
+      sliver: SliverMainAxisGroup(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    style: theme.listTileTheme.titleTextStyle,
+                  ),
+                ),
+                if (widget.showExpandActions) ...[
+                  IconButton(
+                    icon: const Icon(Icons.unfold_more, size: 18.0),
+                    tooltip: 'Expand all',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: _treeController.expandAll,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.unfold_less, size: 18.0),
+                    tooltip: 'Collapse all',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: _treeController.collapseAll,
+                  ),
+                ],
+                IconButton(
+                  icon: const Icon(Icons.copy, size: 18.0),
+                  tooltip: 'Copy',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => widget.jsonString.copyToClipboard(context),
+                ),
+              ],
+            ),
+          ),
+          SliverJsonTreeViewer(
+            jsonString: widget.jsonString,
+            searchQuery: widget.searchQuery,
+            currentMatchIndex: widget.currentMatchIndex,
+            onMatchCountChanged: widget.onMatchCountChanged,
+            controller: _treeController,
+          ),
+        ],
+      ),
+    );
   }
 }
