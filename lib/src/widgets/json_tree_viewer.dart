@@ -30,12 +30,16 @@ class SliverJsonTreeViewer extends StatefulWidget {
   /// Called with the number of search matches whenever it may have changed.
   final ValueChanged<int>? onMatchCountChanged;
 
+  /// Shows each array item's index (`0:`, `1:`, ...) before it.
+  final bool showArrayIndices;
+
   const SliverJsonTreeViewer({
     required this.jsonString,
     this.searchQuery = '',
     this.currentMatchIndex = -1,
     this.onMatchCountChanged,
     this.controller,
+    this.showArrayIndices = false,
     super.key,
   });
 
@@ -99,6 +103,10 @@ class _SliverJsonTreeViewerState extends State<SliverJsonTreeViewer>
     if (oldWidget.jsonString != widget.jsonString) {
       _parseJson();
       return;
+    }
+    if (oldWidget.showArrayIndices != widget.showArrayIndices) {
+      // Only row text changes: no re-parse, just new row heights.
+      _metrics = null;
     }
     if (oldWidget.searchQuery != widget.searchQuery) {
       _search();
@@ -183,7 +191,12 @@ class _SliverJsonTreeViewerState extends State<SliverJsonTreeViewer>
         metrics.textScaler == textScaler) {
       return metrics;
     }
-    return _metrics = _RowMetrics(_rows, style, textScaler);
+    return _metrics = _RowMetrics(
+      _rows,
+      style,
+      textScaler,
+      showArrayIndices: widget.showArrayIndices,
+    );
   }
 
   // -- Search ----------------------------------------------------------------
@@ -197,9 +210,8 @@ class _SliverJsonTreeViewerState extends State<SliverJsonTreeViewer>
       node.valueMatchStart = -1;
 
       if (query.isNotEmpty) {
-        // Array indices are positions, not data: searching "1" would
-        // otherwise match every second item.
-        if (node.key != null && node != _rootNode && !node.isArrayItem) {
+        // Array indices are positions, not data, so they're never searched.
+        if (node.hasKey(showArrayIndices: false)) {
           final count = _countMatches(node.keyText, query);
           if (count > 0) {
             node.keyMatchStart = matches.length;
@@ -336,7 +348,8 @@ class _SliverJsonTreeViewerState extends State<SliverJsonTreeViewer>
           final columns = metrics.columnsPerLine(depth, constraints.maxWidth);
           final spans = _hardWrap(
             [
-              if (node.key != null && !isRoot) ...[
+              if (!isRoot &&
+                  node.hasKey(showArrayIndices: widget.showArrayIndices)) ...[
                 ..._highlighted(
                     node.keyText, _keyColorFor(node), node.keyMatchStart),
                 TextSpan(text: ': ', style: _style(_punctuationColor)),
@@ -396,7 +409,7 @@ class _SliverJsonTreeViewerState extends State<SliverJsonTreeViewer>
         final columns = metrics.columnsPerLine(depth, constraints.maxWidth);
         final spans = _hardWrap(
           [
-            if (node.key != null) ...[
+            if (node.hasKey(showArrayIndices: widget.showArrayIndices)) ...[
               ..._highlighted(
                   node.keyText, _keyColorFor(node), node.keyMatchStart),
               TextSpan(text: ': ', style: _style(_punctuationColor)),
@@ -551,8 +564,8 @@ class _SliverJsonTreeViewerState extends State<SliverJsonTreeViewer>
 // Layout
 // ---------------------------------------------------------------------------
 
-const _indent = 16.0;
-const _arrowSize = 20.0;
+const _indent = 12.0;
+const _arrowSize = 16.0;
 
 /// Minimum row height; also the height of every single-line row.
 const _rowExtent = 16.0;
@@ -601,11 +614,17 @@ class _RowMetrics {
   final List<_Row> rows;
   final TextStyle style;
   final TextScaler textScaler;
+  final bool showArrayIndices;
   late final double columnWidth;
   late final double lineExtent;
   late final double singleRowExtent;
 
-  _RowMetrics(this.rows, this.style, this.textScaler) {
+  _RowMetrics(
+    this.rows,
+    this.style,
+    this.textScaler, {
+    required this.showArrayIndices,
+  }) {
     final painter = TextPainter(
       text: TextSpan(text: 'M' * 100, style: style),
       textDirection: TextDirection.ltr,
@@ -630,10 +649,12 @@ class _RowMetrics {
   }
 
   /// Columns of text in [row], matching what the row builders render.
-  static int _columnsOfRow(_Row row) {
+  int _columnsOfRow(_Row row) {
     final node = row.node;
     final keyColumns =
-        node.key != null && node.parent != null ? node.keyColumns + 2 : 0;
+        node.parent != null && node.hasKey(showArrayIndices: showArrayIndices)
+            ? node.keyColumns + 2
+            : 0;
     switch (row.kind) {
       case _RowKind.close:
         return 2;
@@ -896,6 +917,11 @@ class _JsonNode {
   int get childCount => children.length;
 
   bool get isArrayItem => parent?.type == _NodeType.array;
+
+  /// Whether this node's row shows a key. Array items have their index as
+  /// key, shown only when [showArrayIndices] is on, like JSON hides them.
+  bool hasKey({required bool showArrayIndices}) =>
+      key != null && (!isArrayItem || showArrayIndices);
 
   /// Keys and string values are shown JSON-escaped, so a newline or tab in
   /// the data shows as `\n` / `\t` instead of breaking the row layout.

@@ -32,6 +32,7 @@ void main() {
     String query = '',
     int matchIndex = -1,
     JsonTreeController? controller,
+    bool showArrayIndices = false,
   }) {
     return MaterialApp(
       home: Scaffold(
@@ -43,6 +44,7 @@ void main() {
               currentMatchIndex: matchIndex,
               onMatchCountChanged: (count) => matchCount = count,
               controller: controller,
+              showArrayIndices: showArrayIndices,
             ),
           ],
         ),
@@ -139,14 +141,28 @@ void main() {
     expect(matchCount, 1);
   });
 
-  testWidgets('shows array indices unquoted and skips them in search',
-      (tester) async {
+  testWidgets('shows array items without indices', (tester) async {
     await tester.pumpWidget(
       viewer('{"tags": [{"x": "a"}, {"x": "b"}]}', query: '1'),
     );
     await tester.pump();
 
-    expect(visibleTexts(tester), contains('0: {'));
+    final texts = visibleTexts(tester);
+    expect(texts, contains('"tags": ['));
+    expect(texts, contains('{'));
+    expect(texts.any((t) => t.startsWith('0')), isFalse);
+    expect(matchCount, 0);
+  });
+
+  testWidgets('shows array indices when enabled, without searching them',
+      (tester) async {
+    const json = '{"tags": [{"x": "a"}, {"x": "b"}]}';
+    await tester.pumpWidget(viewer(json, query: '1', showArrayIndices: true));
+    await tester.pump();
+
+    final texts = visibleTexts(tester);
+    expect(texts, contains('0: {'));
+    expect(texts, contains('1: {'));
     expect(matchCount, 0);
   });
 

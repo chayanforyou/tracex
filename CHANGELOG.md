@@ -34,3 +34,9 @@ Support FormData in network logs
 - Improve FormData display (repeated keys, field types)
 - Add search debounce and loading skeleton
 - Fix interceptor memory leak and missing duration on errors
+
+## 1.4.1
+
+- Fix crash when copying large text on Android (clipboard size limit)
+- Show "Copied" only after the copy succeeds
+- Reduce JSON tree indentation
