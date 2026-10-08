@@ -40,3 +40,8 @@ Support FormData in network logs
 - Fix crash when copying large text on Android (clipboard size limit)
 - Show "Copied" only after the copy succeeds
 - Reduce JSON tree indentation
+
+## 1.4.2
+
+- Fix custom objects showing as "Instance of ..." instead of their toJson()
+- Show enums by name in logged bodies

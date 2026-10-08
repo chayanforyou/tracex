@@ -4,9 +4,17 @@ import 'package:dio/dio.dart';
 
 const _encoder = JsonEncoder.withIndent('  ', _toEncodable);
 
-/// Values JSON can't represent (DateTime, enums, custom objects) are shown
-/// as their `toString()` instead of failing the whole body.
-Object? _toEncodable(Object? value) => value.toString();
+/// Converts values JSON can't represent. Like the default encoder, objects
+/// are converted with their `toJson()`. Values without one (DateTime,
+/// enums, ...) become a string instead of failing the whole body.
+Object? _toEncodable(Object? value) {
+  if (value is Enum) return value.name;
+  try {
+    return (value as dynamic).toJson();
+  } catch (_) {
+    return value.toString();
+  }
+}
 
 extension TraceXObjectExt on Object? {
   String get prettyJson {
