@@ -29,7 +29,7 @@ Advanced In-App Debugging Console for Flutter Applications with Network Monitori
 
 ```yaml
 dependencies:
-  tracex: ^1.4.2
+  tracex: ^1.4.3
 ```
 
 Then run `flutter pub get`.

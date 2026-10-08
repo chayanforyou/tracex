@@ -8,12 +8,27 @@ const _encoder = JsonEncoder.withIndent('  ', _toEncodable);
 /// are converted with their `toJson()`. Values without one (DateTime,
 /// enums, ...) become a string instead of failing the whole body.
 Object? _toEncodable(Object? value) {
-  if (value is Enum) return value.name;
   try {
     return (value as dynamic).toJson();
   } catch (_) {
+    if (value is Enum) return value.name;
     return value.toString();
   }
+}
+
+/// Converts [value] to plain JSON values (Map, List, String, num, bool,
+/// null), turning objects into their `toJson()` the same way [prettyJson]
+/// does. Used where the data is walked directly instead of encoded.
+Object? toJsonValue(Object? value) {
+  if (value == null || value is String || value is num || value is bool) {
+    return value;
+  }
+  if (value is Map) {
+    return value.map((k, v) => MapEntry(k.toString(), toJsonValue(v)));
+  }
+  if (value is List) return value.map(toJsonValue).toList();
+  if (value is FormData) return jsonDecode(value.prettyJson);
+  return toJsonValue(_toEncodable(value));
 }
 
 extension TraceXObjectExt on Object? {

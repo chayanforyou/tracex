@@ -6,6 +6,12 @@ import 'package:tracex/src/extensions/object_extensions.dart';
 
 enum _Status { attended }
 
+enum _Shift {
+  morning;
+
+  String toJson() => 'MORNING';
+}
+
 class _Item {
   final int id;
   const _Item(this.id);
@@ -26,6 +32,27 @@ void main() {
       {'id': 2},
     ]);
     expect(decoded['status'], 'attended');
+  });
+
+  test('prefers an enum\'s own toJson() over its name', () {
+    final decoded = jsonDecode({'shift': _Shift.morning}.prettyJson) as Map;
+
+    expect(decoded['shift'], 'MORNING');
+  });
+
+  test('toJsonValue converts nested objects', () {
+    expect(
+      toJsonValue({
+        'items': const [_Item(1)],
+        'shift': _Shift.morning,
+      }),
+      {
+        'items': [
+          {'id': 1},
+        ],
+        'shift': 'MORNING',
+      },
+    );
   });
 
   test('keeps JSON structure when a value is not encodable', () {

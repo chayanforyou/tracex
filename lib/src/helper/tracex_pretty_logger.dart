@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:tracex/src/extensions/object_extensions.dart';
 import 'package:tracex/src/models/tracex_entry.dart';
 
 /// A pretty logger for TraceX
@@ -71,7 +72,8 @@ class TraceXPrettyLogger {
 
     // Print main header
     _printBoxed(
-      header: 'TraceX Network Log ║ ${request.method} ║ ${response.statusCode} ║ $timestamp',
+      header:
+          'TraceX Network Log ║ ${request.method} ║ ${response.statusCode} ║ $timestamp',
       text: request.url,
     );
 
@@ -138,6 +140,13 @@ class TraceXPrettyLogger {
 
   void _printDataBlock(dynamic data, {String? header}) {
     if (data == null) return;
+
+    // Objects inside the body would otherwise print as "Instance of ...".
+    if (data is! Uint8List && data is! String) {
+      try {
+        data = toJsonValue(data);
+      } catch (_) {}
+    }
 
     if (header != null) {
       logPrint('╔ $header');

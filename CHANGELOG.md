@@ -45,3 +45,8 @@ Support FormData in network logs
 
 - Fix custom objects showing as "Instance of ..." instead of their toJson()
 - Show enums by name in logged bodies
+
+## 1.4.3
+
+- Fix console logs showing custom objects and FormData as "Instance of ..."
+- Use an enum's own toJson() when it has one
