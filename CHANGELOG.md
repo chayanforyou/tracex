@@ -50,3 +50,7 @@ Support FormData in network logs
 
 - Fix console logs showing custom objects and FormData as "Instance of ..."
 - Use an enum's own toJson() when it has one
+
+## 1.4.4
+
+- Fix "No MaterialLocalizations found" error when the app uses a non-English locale

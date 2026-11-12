@@ -11,8 +11,10 @@ class TraceXThemeWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Always use English. The default delegates support only 'en', so the
+    // host app's locale (e.g. bn_BD) would cause a missing localizations error.
     Widget content = Localizations(
-      locale: Localizations.maybeLocaleOf(context) ?? const Locale('en', 'US'),
+      locale: const Locale('en', 'US'),
       delegates: const [
         DefaultMaterialLocalizations.delegate,
         DefaultWidgetsLocalizations.delegate,
